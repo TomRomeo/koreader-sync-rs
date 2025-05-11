@@ -1,0 +1,12 @@
+[package]
+name = "koreader-sync-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+poem = "3"
+poem-openapi = { version = "5", features = ["swagger-ui"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls", "postgres", "macros" ] }
+async-trait = "0.1.88"
+serde = { version = "1.0.219", features = ["derive"] }
