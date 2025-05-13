@@ -3,13 +3,24 @@ mod db;
 
 use crate::api::Api;
 use crate::db::postgres::PostgresDB;
+use dotenvy::dotenv;
 use poem::{listener::TcpListener, Route, Server};
-use poem_openapi::{OpenApiService};
+use poem_openapi::OpenApiService;
+use std::env;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
-    let db = PostgresDB::new("postgres://postgres:example@127.0.0.1:5432/postgres?sslmode=disable").await.expect("could not connect to db");
+    // Load environment variables from .env file
+    dotenv().ok();
+
+    // Get the PostgreSQL connection string from the environment variable
+    let postgres_con_string = env::var("POSTGRES_CON_STRING")
+        .expect("POSTGRES_CON_STRING environment variable is not set");
+
+    let db = PostgresDB::new(&postgres_con_string)
+        .await
+        .expect("could not connect to db");
     
     // db.migrate().await.expect("could not migrate db");
 

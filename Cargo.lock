@@ -996,6 +996,7 @@ dependencies = [
  "async-trait",
  "bcrypt",
  "chrono",
+ "dotenvy",
  "poem",
  "poem-openapi",
  "serde",
