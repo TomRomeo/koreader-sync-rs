@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use sqlx::postgres::PgPoolOptions;
 use crate::api::syncs::update_progress::DocumentProgress;
 use crate::db::Database;
@@ -58,12 +58,13 @@ impl Database for PostgresDB {
             .execute(&self.pool).await?;
         Ok(())
     }
-    async fn validate_password(&self, username: &str, password: &str) -> Result<bool, sqlx::Error> {
+    
+    async fn get_hashed_password(&self, username: &str) -> Result<String, sqlx::Error> {
         // Simulate a database query
-        let _: () = sqlx::query_as("SELECT * FROM Users WHERE username = $1 AND password = $2")
+        let row = sqlx::query("SELECT password FROM Users WHERE username = $1")
             .bind(username)
-            .bind(password)
             .fetch_one(&self.pool).await?;
-        Ok(true)
+        let password: String = row.get(0);
+        Ok(password)
     }
 }

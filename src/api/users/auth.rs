@@ -9,24 +9,37 @@ impl crate::Api {
         if username.0.key == "" || password.0.key == "" {
             return Err(Error::from_status(StatusCode::UNAUTHORIZED));
         }
-        self.db.validate_password(&username.0.key, &password.0.key)
-            .await
-            .map_err(|_| Error::from_status(StatusCode::UNAUTHORIZED))?;
+        let hashed_password = match self.db.get_hashed_password(&username.0.key).await {
+            Ok(hash) => hash,
+            Err(err) => {
+                eprintln!("Failed to get hashed password: {}", err);
+                return Err(Error::from_status(StatusCode::UNAUTHORIZED));
+            }
+        };
+
+        if !bcrypt::verify(&password.0.key, &hashed_password).unwrap_or(false) {
+            eprintln!("Invalid password");
+            return Err(Error::from_status(StatusCode::UNAUTHORIZED));
+        }
         Ok(())
     }
 }
 
 pub async fn handler(db: & dyn crate::db::Database, username: &str, password: &str) -> Result<PlainText<String>, Error> {
-
-    match db.validate_password(username, password).await {
-        Ok(..) => {
-            Ok(PlainText("User authenticated successfully".to_string()))
-        }
+    
+    let hashed_password = match db.get_hashed_password(username).await {
+        Ok(hash) => hash,
         Err(err) => {
-            eprintln!("Failed to log in user: {}", err);
-            Err(Error::from_status(StatusCode::UNAUTHORIZED))
+            eprintln!("Failed to get hashed password: {}", err);
+            return Err(Error::from_status(StatusCode::UNAUTHORIZED));
         }
+    };
+    
+    if !bcrypt::verify(password, &hashed_password).unwrap_or(false) {
+        eprintln!("Invalid password");
+        return Err(Error::from_status(StatusCode::UNAUTHORIZED));
     }
+    Ok(PlainText("User authenticated successfully".to_string()))
 }
 
 #[derive(SecurityScheme)]

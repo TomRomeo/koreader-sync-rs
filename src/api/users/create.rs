@@ -14,11 +14,21 @@ pub enum CreateUserResponse {
     Success(PlainText<String>),
     #[oai(status = 404)]
     Failure(PlainText<String>),
+    #[oai(status = 500)]
+    ServerError(PlainText<String>),
 }
 
 pub async fn handler(db: & dyn crate::db::Database, username: &str, password: &str) -> CreateUserResponse {
     
-    match db.create_user(username, password).await {
+    let hashed_password = match bcrypt::hash(password, bcrypt::DEFAULT_COST) {
+        Ok(hash) => hash,
+        Err(err) => {
+            eprint!("Failed to hash password: {}", err);
+            return CreateUserResponse::ServerError(PlainText("Failed to create user".to_string()));
+        }
+    };
+    
+    match db.create_user(username, &hashed_password).await {
         Ok(..) => CreateUserResponse::Success(PlainText("User created successfully".to_string())),
         Err(err) => {
             eprint!("Failed to create user: {}", err);
