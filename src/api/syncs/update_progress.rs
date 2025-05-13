@@ -1,6 +1,7 @@
-use poem_openapi::Object;
-use poem_openapi::payload::PlainText;
 use crate::db::Database;
+use chrono::{DateTime, Utc};
+use poem_openapi::payload::PlainText;
+use poem_openapi::Object;
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 #[derive(serde::Deserialize)]
@@ -11,6 +12,9 @@ pub struct DocumentProgress {
     pub progress: String,
     pub device: String,
     pub device_id: String,
+
+    #[serde(with = "chrono::serde::ts_seconds_option")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
 pub async fn handler(db: & dyn Database, username: &str, document: &str, percentage: &str, progress: &str, device: &str, device_id: &str ) -> PlainText<String> {

@@ -4,7 +4,7 @@ mod db;
 use crate::api::Api;
 use crate::db::postgres::PostgresDB;
 use poem::{listener::TcpListener, Route, Server};
-use poem_openapi::{OpenApi, OpenApiService};
+use poem_openapi::{OpenApiService};
 use std::sync::Arc;
 
 #[tokio::main]

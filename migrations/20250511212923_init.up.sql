@@ -6,11 +6,12 @@ CREATE TABLE users
 );
 CREATE TABLE syncs
 (
-    document   TEXT PRIMARY KEY,
+    document   TEXT NOT NULL,
     "user"     TEXT NOT NULL REFERENCES users (username),
-    sync_time  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    percentage REAL NOT NULL,
+    timestamp  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    percentage TEXT NOT NULL,
     progress   TEXT NOT NULL,
     device     TEXT NOT NULL,
-    device_id  TEXT NOT NULL
+    device_id  TEXT NOT NULL,
+    PRIMARY KEY (document, "user")
 );

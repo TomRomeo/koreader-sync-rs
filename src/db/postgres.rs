@@ -30,21 +30,23 @@ impl PostgresDB {
 impl Database for PostgresDB {
     async fn get_progress(&self, username: &str, id: &str) -> Result<DocumentProgress, sqlx::Error> {
         // Simulate a database query
-        let row = sqlx::query_as::<_, DocumentProgress>("SELECT * FROM Syncs WHERE user = $1 AND document = $2")
+        println!("get progress for user: {}, document: {}", username, id);
+        let row = sqlx::query_as::<_, DocumentProgress>("SELECT * FROM Syncs WHERE \"user\" = $1 AND document = $2")
             .bind(username)
             .bind(id)
             .fetch_one(&self.pool).await?;
+        println!("{:?}", row);
         Ok(row)
     }
     async fn update_progress(&self, username: &str, document: &str, percentage: &str, progress: &str, device: &str, device_id: &str) -> Result<(), sqlx::Error> {
         // Simulate a database query
-        sqlx::query("UPDATE Syncs SET progress = $1, percentage = $2, device = $3, device_id = $4 WHERE user = $5 AND document = $6")
-            .bind(progress)
-            .bind(percentage)
-            .bind(device)
-            .bind(device_id)
+        sqlx::query("INSERT INTO Syncs (\"user\", document, percentage, progress, device, device_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (document, \"user\") DO UPDATE SET percentage = $3, progress = $4, device = $5, device_id = $6, timestamp = now();")
             .bind(username)
             .bind(document)
+            .bind(percentage)
+            .bind(progress)
+            .bind(device)
+            .bind(device_id)
             .execute(&self.pool).await?;
         Ok(())
     }
@@ -58,7 +60,7 @@ impl Database for PostgresDB {
     }
     async fn validate_password(&self, username: &str, password: &str) -> Result<bool, sqlx::Error> {
         // Simulate a database query
-        let row: () = sqlx::query_as("SELECT * FROM Users WHERE username = $1 AND password = $2")
+        let _: () = sqlx::query_as("SELECT * FROM Users WHERE username = $1 AND password = $2")
             .bind(username)
             .bind(password)
             .fetch_one(&self.pool).await?;
