@@ -1,13 +1,13 @@
 use crate::api::syncs::update_progress::DocumentProgress;
 use crate::api::users::auth::{AuthPassword, AuthUser};
 use crate::db::Database;
-use poem::Result;
+use poem::{IntoResponse, Result};
 use poem_openapi::param::Path;
 use poem_openapi::payload::{Json, PlainText};
 use poem_openapi::OpenApi;
 use std::sync::Arc;
-
-
+use poem::http::StatusCode;
+use crate::api::users::create::CreateUserResponse;
 
 mod healthcheck;
 pub mod syncs;
@@ -68,7 +68,7 @@ impl Api {
 
     /// Create user
     #[oai(path = "/users/create", method = "post")]
-    async fn create_user(&self, req: Json<users::create::CreateUserRequest>) -> PlainText<String> {
+    async fn create_user(&self, req: Json<users::create::CreateUserRequest>) -> CreateUserResponse {
         println!("register endpoint hit");
         users::create::handler(self.db.as_ref(), &req.username, &req.password).await
     }
