@@ -1,41 +1,46 @@
+use std::sync::Arc;
 use poem::http::StatusCode;
 use poem::Error;
 use poem_openapi::auth::ApiKey;
 use poem_openapi::payload::PlainText;
-use poem_openapi::SecurityScheme;
+use poem_openapi::{OpenApi, SecurityScheme};
+use crate::api::users;
+use crate::db::Database;
 
-impl crate::Api {
-    pub async fn auth(&self, username: &AuthUser, password: &AuthPassword) -> Result<(), Error> {
-        if username.0.key == "" || password.0.key == "" {
-            return Err(Error::from_status(StatusCode::UNAUTHORIZED));
-        }
-        let hashed_password = match self.db.get_hashed_password(&username.0.key).await {
-            Ok(hash) => hash,
-            Err(err) => {
-                eprintln!("Failed to get hashed password: {}", err);
-                return Err(Error::from_status(StatusCode::UNAUTHORIZED));
-            }
-        };
+pub struct Handler {
+    db: Arc<dyn Database>,
+}
 
-        if !bcrypt::verify(&password.0.key, &hashed_password).unwrap_or(false) {
-            eprintln!("Invalid password");
-            return Err(Error::from_status(StatusCode::UNAUTHORIZED));
-        }
-        Ok(())
+impl Handler {
+    pub fn new(db: Arc<dyn Database>) -> Self {
+        Self { db }
     }
 }
 
-pub async fn handler(db: & dyn crate::db::Database, username: &str, password: &str) -> Result<PlainText<String>, Error> {
-    
-    let hashed_password = match db.get_hashed_password(username).await {
+#[OpenApi]
+impl Handler {
+    #[oai(path = "/users/auth", method = "get")]
+    async fn auth_user(&self, username: AuthUser, password: AuthPassword) -> poem::Result<PlainText<String>> {
+        println!("auth endpoint hit");
+        
+        authenticate(&*self.db, &username, &password).await
+    }
+}
+
+pub async fn authenticate(
+    db: &dyn Database,
+    username: &AuthUser,
+    password: &AuthPassword,
+) -> Result<PlainText<String>, Error> {
+    let hashed_password = match db.get_hashed_password(&username.0.key).await {
         Ok(hash) => hash,
         Err(err) => {
             eprintln!("Failed to get hashed password: {}", err);
             return Err(Error::from_status(StatusCode::UNAUTHORIZED));
         }
     };
-    
-    if !bcrypt::verify(password, &hashed_password).unwrap_or(false) {
+
+    if !bcrypt::verify(&password.0.key, &hashed_password).unwrap_or(false) {
         eprintln!("Invalid password");
         return Err(Error::from_status(StatusCode::UNAUTHORIZED));
     }
